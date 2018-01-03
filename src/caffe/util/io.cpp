@@ -2,8 +2,8 @@
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/text_format.h>
-#include <opencv2/core/core.hpp>
 #ifdef USE_OPENCV
+#include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/highgui/highgui_c.h>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -71,7 +71,8 @@ void WriteProtoToBinaryFile(const Message& proto, const char* filename) {
 
 #ifdef USE_OPENCV
 cv::Mat ReadImageToCVMat(const string& filename,
-    const int height, const int width, const bool is_color) {
+			 const int height, const int width, const bool is_color,
+			 int* img_height, int* img_width) {
   cv::Mat cv_img;
   int cv_read_flag = (is_color ? CV_LOAD_IMAGE_COLOR :
     CV_LOAD_IMAGE_GRAYSCALE);
@@ -85,6 +86,13 @@ cv::Mat ReadImageToCVMat(const string& filename,
   } else {
     cv_img = cv_img_origin;
   }
+  if (img_height != NULL) {
+    *img_height = cv_img.rows;
+  }
+  if (img_width != NULL) {
+    *img_width = cv_img.cols;
+  }
+
   return cv_img;
 }
 

@@ -8,7 +8,6 @@
 #include "caffe/common.hpp"
 #include "caffe/proto/caffe.pb.h"
 #include "caffe/syncedmem.hpp"
-#include "caffe/util/math_functions.hpp"
 
 const int kMaxBlobAxes = 32;
 
@@ -227,6 +226,26 @@ class Blob {
   Dtype* mutable_gpu_data();
   Dtype* mutable_cpu_diff();
   Dtype* mutable_gpu_diff();
+
+  // jay add
+  const Dtype* cpu_data_at(const int n = 0, const int c = 0,
+			   const int h = 0, const int w = 0) const;
+  const Dtype* gpu_data_at(const int n = 0, const int c = 0,
+			   const int h = 0, const int w = 0) const;
+  const Dtype* cpu_diff_at(const int n = 0, const int c = 0,
+			   const int h = 0, const int w = 0) const;
+  const Dtype* gpu_diff_at(const int n = 0, const int c = 0,
+			   const int h = 0, const int w = 0) const;
+  Dtype* mutable_cpu_data_at(const int n = 0, const int c = 0,
+			     const int h = 0, const int w = 0);
+  Dtype* mutable_gpu_data_at(const int n = 0, const int c = 0,
+			     const int h = 0, const int w = 0);
+  Dtype* mutable_cpu_diff_at(const int n = 0, const int c = 0,
+			     const int h = 0, const int w = 0);
+  Dtype* mutable_gpu_diff_at(const int n = 0, const int c = 0,
+			     const int h = 0, const int w = 0);
+  // end jay add
+
   void Update();
   void FromProto(const BlobProto& proto, bool reshape = true);
   void ToProto(BlobProto* proto, bool write_diff = false) const;

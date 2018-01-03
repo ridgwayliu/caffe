@@ -44,7 +44,7 @@ void mxCHECK_FILE_EXIST(const char* file) {
 // The pointers to caffe::Solver and caffe::Net instances
 static vector<shared_ptr<Solver<float> > > solvers_;
 static vector<shared_ptr<Net<float> > > nets_;
-// init_key is generated at the beginning and everytime you call reset
+// init_key is generated at the beginning and every time you call reset
 static double init_key = static_cast<double>(caffe_rng_rand());
 
 /** -----------------------------------------------------------------
@@ -188,10 +188,24 @@ static void get_solver(MEX_ARGS) {
       "Usage: caffe_('get_solver', solver_file)");
   char* solver_file = mxArrayToString(prhs[0]);
   mxCHECK_FILE_EXIST(solver_file);
-  shared_ptr<Solver<float> > solver(new caffe::SGDSolver<float>(solver_file));
+  SolverParameter solver_param;
+  ReadSolverParamsFromTextFileOrDie(solver_file, &solver_param);
+  shared_ptr<Solver<float> > solver(
+      SolverRegistry<float>::CreateSolver(solver_param));
   solvers_.push_back(solver);
   plhs[0] = ptr_to_handle<Solver<float> >(solver.get());
   mxFree(solver_file);
+}
+
+// Usage: caffe_('delete_solver', hSolver)
+static void delete_solver(MEX_ARGS) {
+  mxCHECK(nrhs == 1 && mxIsStruct(prhs[0]),
+      "Usage: caffe_('delete_solver', hSolver)");
+  Solver<float>* solver = handle_to_ptr<Solver<float> >(prhs[0]);
+  solvers_.erase(std::remove_if(solvers_.begin(), solvers_.end(),
+      [solver] (const shared_ptr< Solver<float> > &solverPtr) {
+      return solverPtr.get() == solver;
+  }), solvers_.end());
 }
 
 // Usage: caffe_('solver_get_attr', hSolver)
@@ -266,6 +280,17 @@ static void get_net(MEX_ARGS) {
   plhs[0] = ptr_to_handle<Net<float> >(net.get());
   mxFree(model_file);
   mxFree(phase_name);
+}
+
+// Usage: caffe_('delete_solver', hSolver)
+static void delete_net(MEX_ARGS) {
+  mxCHECK(nrhs == 1 && mxIsStruct(prhs[0]),
+      "Usage: caffe_('delete_solver', hNet)");
+  Net<float>* net = handle_to_ptr<Net<float> >(prhs[0]);
+  nets_.erase(std::remove_if(nets_.begin(), nets_.end(),
+      [net] (const shared_ptr< Net<float> > &netPtr) {
+      return netPtr.get() == net;
+  }), nets_.end());
 }
 
 // Usage: caffe_('net_get_attr', hNet)
@@ -501,6 +526,13 @@ static void write_mean(MEX_ARGS) {
   mxFree(mean_proto_file);
 }
 
+// Usage: caffe_('version')
+static void version(MEX_ARGS) {
+  mxCHECK(nrhs == 0, "Usage: caffe_('version')");
+  // Return version string
+  plhs[0] = mxCreateString(AS_STRING(CAFFE_VERSION));
+}
+
 /** -----------------------------------------------------------------
  ** Available commands.
  **/
@@ -512,12 +544,14 @@ struct handler_registry {
 static handler_registry handlers[] = {
   // Public API functions
   { "get_solver",         get_solver      },
+  { "delete_solver",      delete_solver   },
   { "solver_get_attr",    solver_get_attr },
   { "solver_get_iter",    solver_get_iter },
   { "solver_restore",     solver_restore  },
   { "solver_solve",       solver_solve    },
   { "solver_step",        solver_step     },
   { "get_net",            get_net         },
+  { "delete_net",         delete_net      },
   { "net_get_attr",       net_get_attr    },
   { "net_forward",        net_forward     },
   { "net_backward",       net_backward    },
@@ -539,6 +573,7 @@ static handler_registry handlers[] = {
   { "reset",              reset           },
   { "read_mean",          read_mean       },
   { "write_mean",         write_mean      },
+  { "version",            version         },
   // The end.
   { "END",                NULL            },
 };
